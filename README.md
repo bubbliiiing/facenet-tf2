@@ -17,12 +17,11 @@
 | CASIA-WebFace | [facenet_inception_resnetv1.h5](https://github.com/bubbliiiing/facenet-tf2/releases/download/v1.0/facenet_inception_resnetv1.h5) | LFW | 160x160 | 99.02% |
 
 ## 所需环境
-tensorflow-gpu==1.13.1  
-keras==2.1.5  
+tensorflow-gpu==2.2.0
 
 ## 文件下载
 已经训练好的facenet_mobilenet.h5和facenet_inception_resnetv1.h5可以在百度网盘下载。    
-链接: https://pan.baidu.com/s/1gWN9_wl4gjKzsiOn0VOm9A 提取码: tj5r     
+链接: https://pan.baidu.com/s/1HatoBXDZ1rNGAiVwfYOiTA 提取码: skgr   
 
 训练用的CASIA-WebFaces数据集以及评估用的LFW数据集可以在百度网盘下载。    
 链接: https://pan.baidu.com/s/1fhiHlylAFVoR43yfDbi4Ag 提取码: gkch    
