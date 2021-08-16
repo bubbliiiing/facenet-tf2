@@ -1,4 +1,4 @@
-## Facenet：人脸识别模型在Keras当中的实现
+## Facenet：人脸识别模型在TF2当中的实现
 ---
 
 ## 目录
@@ -13,8 +13,8 @@
 ## 性能情况
 | 训练数据集 | 权值文件名称 | 测试数据集 | 输入图片大小 | accuracy |
 | :-----: | :-----: | :------: | :------: | :------: |
-| CASIA-WebFace | [facenet_mobilenet.h5](https://github.com/bubbliiiing/facenet-keras/releases/download/v1.0/facenet_mobilenet.h5) | LFW | 160x160 | 97.86% |
-| CASIA-WebFace | [facenet_inception_resnetv1.h5](https://github.com/bubbliiiing/facenet-keras/releases/download/v1.0/facenet_inception_resnetv1.h5) | LFW | 160x160 | 99.02% |
+| CASIA-WebFace | [facenet_mobilenet.h5](https://github.com/bubbliiiing/facenet-tf2/releases/download/v1.0/facenet_mobilenet.h5) | LFW | 160x160 | 97.86% |
+| CASIA-WebFace | [facenet_inception_resnetv1.h5](https://github.com/bubbliiiing/facenet-tf2/releases/download/v1.0/facenet_inception_resnetv1.h5) | LFW | 160x160 | 99.02% |
 
 ## 所需环境
 tensorflow-gpu==1.13.1  
