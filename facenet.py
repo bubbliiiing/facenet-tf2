@@ -13,9 +13,9 @@ from nets.facenet import facenet
 #--------------------------------------------#
 class Facenet(object):
     _defaults = {
-        "model_path"    : "model_data/facenet_inception_resnetv1.h5",
+        "model_path"    : "model_data/facenet_mobilenet.h5",
         "input_shape"   : [160,160,3],
-        "backbone"      : "inception_resnetv1"
+        "backbone"      : "mobilenet"
     }
 
     @classmethod
