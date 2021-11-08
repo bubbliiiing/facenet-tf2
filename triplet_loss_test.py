@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import backend as K
 
+
 def triplet_loss(y_true, y_pred, alpha=1):
     anchor, positive, negative = y_pred[0], y_pred[1], y_pred[2]
     pos_dist = K.sum(K.square(anchor - positive), axis=-1)

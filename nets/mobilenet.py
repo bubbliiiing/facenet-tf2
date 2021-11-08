@@ -14,9 +14,7 @@ def _conv_block(inputs, filters, kernel=(3, 3), strides=(1, 1)):
     x = BatchNormalization(name='conv1_bn')(x)
     return Activation(relu6, name='conv1_relu')(x)
 
-
 def _depthwise_conv_block(inputs, pointwise_conv_filters, depth_multiplier=1, strides=(1, 1), block_id=1):
-
     x = DepthwiseConv2D((3, 3),
                         padding='same',
                         depth_multiplier=depth_multiplier,
@@ -67,15 +65,21 @@ def MobileNet(inputs, embedding_size=128, dropout_keep_prob=0.4, alpha=1.0, dept
     
     # 1024
     x = GlobalAveragePooling2D()(x)
-    # 防止网络过拟合，训练的时候起作用
+    #--------------------------------------------#
+    #   防止网络过拟合，训练的时候起作用
+    #--------------------------------------------#
     x = Dropout(1.0 - dropout_keep_prob, name='Dropout')(x)
-    # 全连接层到128
-    # 128
+    #--------------------------------------------#
+    #   全连接层到128
+    #   128
+    #--------------------------------------------#
     x = Dense(embedding_size, use_bias=False, name='Bottleneck')(x)
     x = BatchNormalization(momentum=0.995, epsilon=0.001, scale=False,
                            name='BatchNorm_Bottleneck')(x)
  
-    # 创建模型
+    #--------------------------------------------#
+    #   创建模型
+    #--------------------------------------------#
     model = Model(inputs, x, name='mobilenet')
 
     return model
