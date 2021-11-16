@@ -218,6 +218,7 @@ if __name__ == "__main__":
         train_dataset = FacenetDataset(input_shape, lines[:num_train], num_train, num_classes, Batch_size)
         val_dataset   = FacenetDataset(input_shape, lines[num_train:], num_val, num_classes, Batch_size)
                 
+        print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, Batch_size))
         if eager:
             gen     = tf.data.Dataset.from_generator(partial(train_dataset.generate), (tf.float32, tf.float32))
             gen_val = tf.data.Dataset.from_generator(partial(val_dataset.generate), (tf.float32, tf.float32))
