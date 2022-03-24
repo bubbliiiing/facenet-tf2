@@ -1,6 +1,9 @@
+import os
+
 import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
+
 from utils.utils_metrics import evaluate
 
 
@@ -19,7 +22,7 @@ def get_train_step_fn():
         return loss_value, triplet_loss_value, CE_loss_value
     return train_step
 
-def fit_one_epoch(net, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, Epoch, triplet_loss, test_loader, lfw_eval_flag):
+def fit_one_epoch(net, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, Epoch, triplet_loss, test_loader, lfw_eval_flag, save_period, save_dir):
     train_step  = get_train_step_fn()
     
     loss                = 0
@@ -71,7 +74,7 @@ def fit_one_epoch(net, loss_history, optimizer, epoch, epoch_step, epoch_step_va
     if lfw_eval_flag:
         print("正在进行LFW数据集测试")
         labels, distances = [], []
-        for _, (data_a, data_p, label) in enumerate(test_loader.generate()):
+        for _, (data_a, data_p, label) in enumerate(test_loader):
             out_a, out_p    = net(data_a)[1], net(data_p)[1]
             dists           = np.linalg.norm(out_a - out_p, axis=1)
             distances.append(dists)
@@ -85,4 +88,5 @@ def fit_one_epoch(net, loss_history, optimizer, epoch, epoch_step, epoch_step_va
     loss_history.on_epoch_end([], logs)
     print('Epoch:'+ str(epoch + 1) + '/' + str(Epoch))
     print('Total Loss: %.3f || Val Loss: %.3f ' % (loss / epoch_step, val_loss / epoch_step_val))
-    net.save_weights('logs/ep%03d-loss%.3f-val_loss%.3f.h5' % ((epoch + 1), loss / epoch_step ,val_loss / epoch_step_val))
+    if (epoch + 1) % save_period == 0 or epoch + 1 == Epoch:
+        net.save_weights(os.path.join(save_dir, 'ep%03d-loss%.3f-val_loss%.3f.h5' % ((epoch + 1), loss / epoch_step ,val_loss / epoch_step_val)))
