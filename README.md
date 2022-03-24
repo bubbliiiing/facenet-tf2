@@ -24,7 +24,7 @@ tensorflow-gpu==2.2.0
 链接: https://pan.baidu.com/s/1RLMazd_dKkXfxPO_S3FMTA 提取码: cj6u   
 
 训练用的CASIA-WebFaces数据集以及评估用的LFW数据集可以在百度网盘下载。    
-链接: https://pan.baidu.com/s/1fhiHlylAFVoR43yfDbi4Ag 提取码: gkch    
+链接: https://pan.baidu.com/s/1fhiHlylAFVoR43yfDbi4Ag 提取码: gkch   
 
 ## 预测步骤
 ### a、使用预训练权重
