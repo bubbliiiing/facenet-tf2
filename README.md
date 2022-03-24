@@ -21,7 +21,7 @@ tensorflow-gpu==2.2.0
 
 ## 文件下载
 已经训练好的facenet_mobilenet.h5和facenet_inception_resnetv1.h5可以在百度网盘下载。    
-链接: https://pan.baidu.com/s/1928cs0t4aS5k0am-aWNySA 提取码:j2x5    
+链接: https://pan.baidu.com/s/1928cs0t4aS5k0am-aWNySA 提取码: j2x5    
 
 训练用的CASIA-WebFaces数据集以及评估用的LFW数据集可以在百度网盘下载。    
 链接: https://pan.baidu.com/s/1qMxFR8H_ih0xmY-rKgRejw 提取码: bcrq    
