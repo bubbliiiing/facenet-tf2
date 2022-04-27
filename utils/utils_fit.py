@@ -48,7 +48,7 @@ def fit_one_epoch(net, loss_history, optimizer, epoch, epoch_step, epoch_step_va
         for iteration, batch in enumerate(gen):
             if iteration >= epoch_step:
                 break
-            images, targets = batch[0], tf.convert_to_tensor(batch[1])
+            images, targets = batch[0], batch[1]
             loss_value, triplet_loss_value, CE_loss_value = train_step(images, targets, net, optimizer, triplet_loss)
             loss                = loss + loss_value
             total_triple_loss   = total_triple_loss + triplet_loss_value
@@ -66,7 +66,7 @@ def fit_one_epoch(net, loss_history, optimizer, epoch, epoch_step, epoch_step_va
         for iteration, batch in enumerate(gen_val):
             if iteration >= epoch_step_val:
                 break
-            images, targets     = batch[0], tf.convert_to_tensor(batch[1])
+            images, targets     = batch[0], batch[1]
             outputs             = net(images)
             CE_loss_value       = tf.reduce_mean(tf.losses.categorical_crossentropy(targets, outputs[0]))
             triplet_loss_value  = triplet_loss(None, outputs[1])
