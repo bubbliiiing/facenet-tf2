@@ -8,7 +8,7 @@ from utils.utils_metrics import evaluate
 
 
 # 防止bug
-def get_train_step_fn():
+def get_train_step_fn(strategy):
     @tf.function
     def train_step(imgs, targets, net, optimizer, triplet_loss):
         with tf.GradientTape() as tape:
@@ -20,10 +20,21 @@ def get_train_step_fn():
         grads = tape.gradient(loss_value, net.trainable_variables)
         optimizer.apply_gradients(zip(grads, net.trainable_variables))
         return loss_value, triplet_loss_value, CE_loss_value
-    return train_step
+    if strategy == None:
+        return train_step
+    else:
+        #----------------------#
+        #   多gpu训练
+        #----------------------#
+        @tf.function
+        def distributed_train_step(images, targets, net, optimizer):
+            per_replica_losses, per_replica_triplet_loss_value, per_replica_CE_loss_value = strategy.run(train_step, args=(images, targets, net, optimizer,))
+            return strategy.reduce(tf.distribute.ReduceOp.MEAN, per_replica_losses, axis=None), strategy.reduce(tf.distribute.ReduceOp.MEAN, per_replica_triplet_loss_value, axis=None), \
+                strategy.reduce(tf.distribute.ReduceOp.MEAN, per_replica_CE_loss_value, axis=None)
+        return distributed_train_step
 
-def fit_one_epoch(net, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, Epoch, triplet_loss, test_loader, lfw_eval_flag, save_period, save_dir):
-    train_step  = get_train_step_fn()
+def fit_one_epoch(net, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, Epoch, triplet_loss, test_loader, lfw_eval_flag, save_period, save_dir, strategy):
+    train_step  = get_train_step_fn(strategy)
     
     loss                = 0
     total_triple_loss   = 0

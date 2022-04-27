@@ -17,11 +17,14 @@ from utils.dataloader import FacenetDataset, LFWDataset
 from utils.utils import get_num_classes
 from utils.utils_fit import fit_one_epoch
 
-gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
-for gpu in gpus:
-    tf.config.experimental.set_memory_growth(gpu, True)
-    
+
 if __name__ == "__main__":
+    #---------------------------------------------------------------------#
+    #   train_gpu   训练用到的GPU
+    #               默认为第一张卡、双卡为[0, 1]、三卡为[0, 1, 2]
+    #               在使用多GPU时，每个卡上的batch为总batch除以卡的数量。
+    #---------------------------------------------------------------------#
+    train_gpu       = [0,]
     #----------------------------------------------------#
     #   是否使用eager模式训练
     #----------------------------------------------------#
@@ -64,9 +67,9 @@ if __name__ == "__main__":
     #   在此提供若干参数设置建议，各位训练者根据自己的需求进行灵活调整：
     #   （一）从预训练权重开始训练：
     #       Adam：
-    #           Init_Epoch = 0，Freeze_Epoch = 50，UnFreeze_Epoch = 100，optimizer_type = 'adam'，Init_lr = 1e-3。
+    #           Init_Epoch = 0，Epoch = 100，optimizer_type = 'adam'，Init_lr = 1e-3，weight_decay = 0。
     #       SGD：
-    #           Init_Epoch = 0，Freeze_Epoch = 50，UnFreeze_Epoch = 100，optimizer_type = 'sgd'，Init_lr = 1e-2。
+    #           Init_Epoch = 0，Epoch = 100，optimizer_type = 'sgd'，Init_lr = 1e-2，weight_decay = 5e-4。
     #       其中：UnFreeze_Epoch可以在100-300之间调整。
     #   （二）batch_size的设置：
     #       在显卡能够接受的范围内，以大为好。显存不足与数据集大小无关，提示显存不足（OOM或者CUDA out of memory）请调小batch_size。
@@ -76,14 +79,14 @@ if __name__ == "__main__":
     #------------------------------------------------------#
     #   训练参数
     #   Init_Epoch      模型当前开始的训练世代
+    #   Epoch           模型总共训练的epoch
     #   batch_size      每次输入的图片数量
     #                   受到数据加载方式与triplet loss的影响
     #                   batch_size需要为3的倍数
-    #   Epoch           模型总共训练的epoch
     #------------------------------------------------------#
-    batch_size      = 96
     Init_Epoch      = 0
     Epoch           = 100
+    batch_size      = 96
 
     #------------------------------------------------------------------#
     #   其它训练参数：学习率、优化器、学习率下降有关
@@ -130,16 +133,46 @@ if __name__ == "__main__":
     lfw_dir_path    = "lfw"
     lfw_pairs_path  = "model_data/lfw_pair.txt"
 
+    #------------------------------------------------------#
+    #   设置用到的显卡
+    #------------------------------------------------------#
+    os.environ["CUDA_VISIBLE_DEVICES"]  = ','.join(str(x) for x in train_gpu)
+    ngpus_per_node                      = len(train_gpu)
+    
+    gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
+        
+    if ngpus_per_node > 1:
+        strategy = tf.distribute.MirroredStrategy()
+    else:
+        strategy = None
+    print('Number of devices: {}'.format(ngpus_per_node))
+
     num_classes = get_num_classes(annotation_path)
-    #---------------------------------#
-    #   载入模型并加载预训练权重
-    #---------------------------------#
-    model = facenet(input_shape, num_classes, backbone=backbone, mode="train")
-    if model_path != '':
+    
+    if ngpus_per_node > 1:
+        with strategy.scope():
+            #---------------------------------#
+            #   载入模型并加载预训练权重
+            #---------------------------------#
+            model = facenet(input_shape, num_classes, backbone=backbone, mode="train")
+            if model_path != '':
+                #---------------------------------#
+                #   载入预训练权重
+                #---------------------------------#
+                model.load_weights(model_path, by_name=True, skip_mismatch=True)
+    else:
         #---------------------------------#
-        #   载入预训练权重
+        #   载入模型并加载预训练权重
         #---------------------------------#
-        model.load_weights(model_path, by_name=True, skip_mismatch=True)
+        model = facenet(input_shape, num_classes, backbone=backbone, mode="train")
+        if model_path != '':
+            #---------------------------------#
+            #   载入预训练权重
+            #---------------------------------#
+            model.load_weights(model_path, by_name=True, skip_mismatch=True)
+
     #-------------------------------------------------------#
     #   0.01用于验证，0.99用于训练
     #-------------------------------------------------------#
@@ -206,16 +239,24 @@ if __name__ == "__main__":
                 K.set_value(optimizer.lr, lr)
                 
                 fit_one_epoch(model, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, 
-                            Epoch, triplet_loss(batch_size=batch_size//3), test_loader, lfw_eval_flag, save_period, save_dir)
+                            Epoch, triplet_loss(batch_size=batch_size//3), test_loader, lfw_eval_flag, save_period, save_dir, strategy)
 
                 train_dataset.on_epoch_end()
                 val_dataset.on_epoch_end()
         
         else:
-            model.compile(
-                loss={'Embedding' : triplet_loss(batch_size=batch_size//3), 'Softmax' : 'categorical_crossentropy'}, 
-                optimizer = optimizer, metrics = {'Softmax' : 'categorical_accuracy'}
-            )
+            if ngpus_per_node > 1:
+                with strategy.scope():
+                    model.compile(
+                        loss={'Embedding' : triplet_loss(batch_size=batch_size//3), 'Softmax' : 'categorical_crossentropy'}, 
+                        optimizer = optimizer, metrics = {'Softmax' : 'categorical_accuracy'}
+                    )
+            else:
+                model.compile(
+                    loss={'Embedding' : triplet_loss(batch_size=batch_size//3), 'Softmax' : 'categorical_crossentropy'}, 
+                    optimizer = optimizer, metrics = {'Softmax' : 'categorical_accuracy'}
+                )
+                
             #-------------------------------------------------------------------------------#
             #   训练参数的设置
             #   logging         用于设置tensorboard的保存地址
@@ -241,8 +282,8 @@ if __name__ == "__main__":
                 callbacks       = [logging, loss_history, checkpoint, lr_scheduler]
 
             print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
-            model.fit_generator(
-                generator           = train_dataset,
+            model.fit(
+                x                   = train_dataset,
                 steps_per_epoch     = epoch_step,
                 validation_data     = val_dataset,
                 validation_steps    = epoch_step_val,
