@@ -1,5 +1,7 @@
 import datetime
 import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 from functools import partial
 
 import numpy as np
