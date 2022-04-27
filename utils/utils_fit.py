@@ -7,12 +7,16 @@ from tqdm import tqdm
 from utils.utils_metrics import evaluate
 
 
-# 防止bug
+#----------------------#
+#   防止bug
+#----------------------#
 def get_train_step_fn(strategy):
     @tf.function
     def train_step(imgs, targets, net, optimizer, triplet_loss):
         with tf.GradientTape() as tape:
-            # 计算loss
+            #----------------------#
+            #   计算loss
+            #----------------------#
             outputs             = net(imgs, training=True)
             CE_loss_value       = tf.reduce_mean(tf.losses.categorical_crossentropy(targets, outputs[0]))
             triplet_loss_value  = triplet_loss(None, outputs[1])
@@ -33,9 +37,37 @@ def get_train_step_fn(strategy):
                 strategy.reduce(tf.distribute.ReduceOp.MEAN, per_replica_CE_loss_value, axis=None)
         return distributed_train_step
 
+#----------------------#
+#   防止bug
+#----------------------#
+def get_val_step_fn(strategy):
+    @tf.function
+    def val_step(imgs, targets, net, optimizer, triplet_loss):
+        #----------------------#
+        #   计算loss
+        #----------------------#
+        outputs             = net(imgs, training=False)
+        CE_loss_value       = tf.reduce_mean(tf.losses.categorical_crossentropy(targets, outputs[0]))
+        triplet_loss_value  = triplet_loss(None, outputs[1])
+        loss_value          = CE_loss_value + triplet_loss_value
+        return loss_value, triplet_loss_value, CE_loss_value
+    if strategy == None:
+        return val_step
+    else:
+        #----------------------#
+        #   多gpu训练
+        #----------------------#
+        @tf.function
+        def distributed_val_step(imgs, targets, net, optimizer, triplet_loss):
+            per_replica_losses, per_replica_triplet_loss_value, per_replica_CE_loss_value = strategy.run(val_step, args=(imgs, targets, net, optimizer, triplet_loss))
+            return strategy.reduce(tf.distribute.ReduceOp.MEAN, per_replica_losses, axis=None), strategy.reduce(tf.distribute.ReduceOp.MEAN, per_replica_triplet_loss_value, axis=None), \
+                strategy.reduce(tf.distribute.ReduceOp.MEAN, per_replica_CE_loss_value, axis=None)
+        return distributed_val_step
+
 def fit_one_epoch(net, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, Epoch, triplet_loss, test_loader, lfw_eval_flag, save_period, save_dir, strategy):
     train_step  = get_train_step_fn(strategy)
-    
+    val_step    = get_val_step_fn(strategy)
+
     loss                = 0
     total_triple_loss   = 0
     total_CE_loss       = 0 
@@ -67,10 +99,7 @@ def fit_one_epoch(net, loss_history, optimizer, epoch, epoch_step, epoch_step_va
             if iteration >= epoch_step_val:
                 break
             images, targets     = batch[0], batch[1]
-            outputs             = net(images)
-            CE_loss_value       = tf.reduce_mean(tf.losses.categorical_crossentropy(targets, outputs[0]))
-            triplet_loss_value  = triplet_loss(None, outputs[1])
-            loss_value          = CE_loss_value + triplet_loss_value
+            loss_value, triplet_loss_value, CE_loss_value = val_step(images, targets, net, optimizer, triplet_loss)
 
             val_loss            = val_loss + loss_value
             val_triple_loss     = val_triple_loss + triplet_loss_value
