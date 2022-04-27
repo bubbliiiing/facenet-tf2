@@ -27,8 +27,8 @@ def get_train_step_fn(strategy):
         #   多gpu训练
         #----------------------#
         @tf.function
-        def distributed_train_step(images, targets, net, optimizer):
-            per_replica_losses, per_replica_triplet_loss_value, per_replica_CE_loss_value = strategy.run(train_step, args=(images, targets, net, optimizer,))
+        def distributed_train_step(imgs, targets, net, optimizer, triplet_loss):
+            per_replica_losses, per_replica_triplet_loss_value, per_replica_CE_loss_value = strategy.run(train_step, args=(imgs, targets, net, optimizer, triplet_loss))
             return strategy.reduce(tf.distribute.ReduceOp.MEAN, per_replica_losses, axis=None), strategy.reduce(tf.distribute.ReduceOp.MEAN, per_replica_triplet_loss_value, axis=None), \
                 strategy.reduce(tf.distribute.ReduceOp.MEAN, per_replica_CE_loss_value, axis=None)
         return distributed_train_step
