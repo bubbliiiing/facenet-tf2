@@ -142,7 +142,10 @@ if __name__ == "__main__":
     gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
-        
+    
+    if ngpus_per_node > 1 and ngpus_per_node > len(gpus):
+        raise ValueError("The number of GPUs specified for training is more than the GPUs on the machine")
+
     if ngpus_per_node > 1:
         strategy = tf.distribute.MirroredStrategy()
     else:
