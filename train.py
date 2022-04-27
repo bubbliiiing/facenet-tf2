@@ -239,7 +239,7 @@ if __name__ == "__main__":
                 K.set_value(optimizer.lr, lr)
                 
                 fit_one_epoch(model, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, 
-                            Epoch, triplet_loss(batch_size=batch_size//3), test_loader, lfw_eval_flag, save_period, save_dir, strategy)
+                            Epoch, triplet_loss(), test_loader, lfw_eval_flag, save_period, save_dir, strategy)
 
                 train_dataset.on_epoch_end()
                 val_dataset.on_epoch_end()
@@ -248,12 +248,12 @@ if __name__ == "__main__":
             if ngpus_per_node > 1:
                 with strategy.scope():
                     model.compile(
-                        loss={'Embedding' : triplet_loss(batch_size=batch_size//3), 'Softmax' : 'categorical_crossentropy'}, 
+                        loss={'Embedding' : triplet_loss(), 'Softmax' : 'categorical_crossentropy'}, 
                         optimizer = optimizer, metrics = {'Softmax' : 'categorical_accuracy'}
                     )
             else:
                 model.compile(
-                    loss={'Embedding' : triplet_loss(batch_size=batch_size//3), 'Softmax' : 'categorical_crossentropy'}, 
+                    loss={'Embedding' : triplet_loss(), 'Softmax' : 'categorical_crossentropy'}, 
                     optimizer = optimizer, metrics = {'Softmax' : 'categorical_accuracy'}
                 )
                 

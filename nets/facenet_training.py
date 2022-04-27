@@ -1,20 +1,14 @@
 import math
-import os
-import random
 from functools import partial
 
-import cv2
-import numpy as np
 import tensorflow as tf
 import tensorflow.keras.backend as K
-from PIL import Image
-from tensorflow import keras
-from tensorflow.python.keras.utils.np_utils import to_categorical
 
 
-def triplet_loss(alpha = 0.2, batch_size = 32):
+def triplet_loss(alpha = 0.2):
     def _triplet_loss(y_true, y_pred):
-        anchor, positive, negative = y_pred[:batch_size], y_pred[batch_size:int(2 * batch_size)], y_pred[-batch_size:]
+        batch_size = tf.shape(y_pred)[0] // 3
+        anchor, positive, negative = y_pred[:batch_size], y_pred[batch_size:2 * batch_size], y_pred[-batch_size:]
 
         pos_dist    = K.sqrt(K.sum(K.square(anchor - positive), axis=-1))
         neg_dist    = K.sqrt(K.sum(K.square(anchor - negative), axis=-1))
