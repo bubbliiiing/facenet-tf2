@@ -211,8 +211,8 @@ if __name__ == "__main__":
         if epoch_step == 0 or epoch_step_val == 0:
             raise ValueError('数据集过小，无法进行训练，请扩充数据集。')
 
-        train_dataset   = FacenetDataset(input_shape, lines[:num_train], batch_size, num_classes, random = True)
-        val_dataset     = FacenetDataset(input_shape, lines[num_train:], batch_size, num_classes, random = False)
+        train_dataset   = FacenetDataset(input_shape, lines[:num_train], batch_size, num_classes, ngpus_per_node, random = True)
+        val_dataset     = FacenetDataset(input_shape, lines[num_train:], batch_size, num_classes, ngpus_per_node, random = False)
 
         optimizer = {
             'adam'  : Adam(lr = Init_lr_fit, beta_1 = momentum),
